@@ -37,7 +37,7 @@ __host__ void myErrorHandler(hipError_t ifail, const std::string file, int line,
   { myErrorHandler((call), __FILE__, __LINE__, 1); }
 
 /* The number of integer elements in the array */
-#define ARRAY_LENGTH 256
+#define ARRAY_LENGTH 1000
 
 /* Suggested kernel parameters */
 #define NUM_BLOCKS 1
@@ -49,8 +49,12 @@ __global__ void myKernel(double a, double *x)
   // First get index
   int i = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-  // Apply operation
-  x[i] = a * x[i];
+  // Check we are in range
+  if (i < ARRAY_LENGTH)
+  {
+    // Apply operation
+    x[i] = a * x[i];
+  }
 }
 
 /* Main routine */
@@ -104,6 +108,10 @@ int main(int argc, char *argv[]) {
 
   /* TODO: write kernel */
   unsigned int nBlocks = ARRAY_LENGTH / THREADS_PER_BLOCK;
+  if (nBlocks * THREADS_PER_BLOCK < ARRAY_LENGTH)
+  {
+    nBlocks++;
+  }
   dim3 gridDim = {nBlocks, 1, 1};
   dim3 blockDim = {THREADS_PER_BLOCK, 1, 1};
   myKernel<<<gridDim, blockDim>>>(a, d_x);

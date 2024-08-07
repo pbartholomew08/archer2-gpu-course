@@ -81,10 +81,17 @@ int main(int argc, char *argv[]) {
   }
 
   /* TODO: allocate memory on device */
+  double *d_x = NULL; // device data
+  HIP_ASSERT( hipMalloc(&d_x, ARRAY_LENGTH * sizeof(double)) );
 
   /* TODO: copy input array from host to GPU */
+  HIP_ASSERT( hipMemcpy(d_x, h_x, ARRAY_LENGTH * sizeof(double), hipMemcpyHostToDevice) );
 
   /* TODO: copy the result array back to the host output array */
+  HIP_ASSERT( hipMemcpy(h_out, d_x, ARRAY_LENGTH * sizeof(double), hipMemcpyDeviceToHost) );
+
+  /// /* TODO: check what happens when device and host references are reversed */
+  /// HIP_ASSERT( hipMemcpy(d_x, h_out, ARRAY_LENGTH * sizeof(double), hipMemcpyDeviceToHost) );
 
   /* We can now check the results ... */
   std::cout << "Results:" << std::endl;
@@ -103,6 +110,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* TODO: free device buffer */
+  HIP_ASSERT( hipFree(d_x) );
 
   /* free host buffers */
 

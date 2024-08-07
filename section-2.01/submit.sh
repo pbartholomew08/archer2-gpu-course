@@ -6,6 +6,13 @@
 
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu-shd
+#SBATCH --account=ta163
+
+# Set modules
+module load PrgEnv-amd
+module load rocm
+module load craype-accel-amd-gfx90a
+module load craype-x86-milan
 
 # Check assigned GPU
 srun --ntasks=1 rocm-smi

@@ -22,8 +22,8 @@
 
 #include <cassert>
 #include <cfloat>
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 #include "hip/hip_runtime.h"
@@ -43,16 +43,6 @@ __host__ void myErrorHandler(hipError_t ifail, const std::string file, int line,
 #define NUM_BLOCKS 1
 #define THREADS_PER_BLOCK 256
 
-/* TODO: Kernel to scale input */
-__global__ void myKernel(double a, double *x)
-{
-  // First get index
-  int i = (blockIdx.x * blockDim.x) + threadIdx.x;
-
-  // Apply operation
-  x[i] = a * x[i];
-}
-
 /* Main routine */
 
 int main(int argc, char *argv[]) {
@@ -62,6 +52,7 @@ int main(int argc, char *argv[]) {
   double a = 2.0;       /* constant a */
   double *h_x = NULL;   /* input array (host) */
   double *h_out = NULL; /* output array (host) */
+  double *d_x = NULL;   /* array (device) */
 
   /* Check we have a GPU, and get device name from the hipDeviceProp_t
    * structure. This is for information. */
@@ -73,7 +64,7 @@ int main(int argc, char *argv[]) {
   HIP_ASSERT(hipGetDeviceCount(&ndevice));
 
   if (ndevice == 0) {
-    std::cerr << "No GPU available!" << std::endl;
+    std::cout << "No GPU available!" << std::endl;
     std::exit(0);
   }
 
@@ -95,26 +86,19 @@ int main(int argc, char *argv[]) {
     h_out[i] = 0;
   }
 
-  /* TODO: allocate memory on device */
-  double *d_x = NULL; // device data
-  HIP_ASSERT( hipMalloc(&d_x, ARRAY_LENGTH * sizeof(double)) );
+  /* allocate memory on device */
 
-  /* TODO: copy input array from host to GPU */
-  HIP_ASSERT( hipMemcpy(d_x, h_x, ARRAY_LENGTH * sizeof(double), hipMemcpyHostToDevice) );
+  HIP_ASSERT(hipMalloc(&d_x, sz));
 
-  /* TODO: write kernel */
-  unsigned int nBlocks = ARRAY_LENGTH / THREADS_PER_BLOCK;
-  dim3 gridDim = {nBlocks, 1, 1};
-  dim3 blockDim = {THREADS_PER_BLOCK, 1, 1};
-  myKernel<<<gridDim, blockDim>>>(a, d_x);
-  HIP_ASSERT( hipPeekAtLastError() );   // Check for errors in kernel launch
-  HIP_ASSERT( hipDeviceSynchronize() ); // Check for errors in the kernel
+  /* copy input array from host to GPU */
 
-  /* TODO: copy the result array back to the host output array */
-  HIP_ASSERT( hipMemcpy(h_out, d_x, ARRAY_LENGTH * sizeof(double), hipMemcpyDeviceToHost) );
+  HIP_ASSERT(hipMemcpy(d_x, h_x, sz, hipMemcpyHostToDevice));
 
-  /// /* TODO: check what happens when device and host references are reversed */
-  /// HIP_ASSERT( hipMemcpy(d_x, h_out, ARRAY_LENGTH * sizeof(double), hipMemcpyDeviceToHost) );
+  /* ... kernel will be here  ... */
+
+  /* copy the result array back to the host output array */
+
+  HIP_ASSERT(hipMemcpy(h_out, d_x, sz, hipMemcpyDeviceToHost));
 
   /* We can now check the results ... */
   std::cout << "Results:" << std::endl;
@@ -132,8 +116,9 @@ int main(int argc, char *argv[]) {
               << ", and correct: " << ncorrect << std::endl;
   }
 
-  /* TODO: free device buffer */
-  HIP_ASSERT( hipFree(d_x) );
+  /* free device buffer */
+
+  HIP_ASSERT(hipFree(d_x));
 
   /* free host buffers */
 

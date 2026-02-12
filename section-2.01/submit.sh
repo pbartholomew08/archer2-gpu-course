@@ -15,7 +15,7 @@ module load craype-accel-amd-gfx90a
 module load craype-x86-milan
 
 # Check assigned GPU
-srun --ntasks=1 rocm-smi
+rocm-smi
 
 srun --ntasks=1 --cpus-per-task=1 ./a.out
 
